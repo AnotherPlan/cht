@@ -3,8 +3,10 @@ export async function makeApiRequest(path) {
 	try {
 		const response = await fetch("https://api.la-bit.com/chart", {
 			method: "POST",
+			mode: 'cors', // defaults to same-origin
 			headers: {
-			  "Content-Type": "application/json",
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(path),
 		  })
@@ -13,6 +15,14 @@ export async function makeApiRequest(path) {
 		throw new Error(`CryptoCompare request error: ${error.status}`);
 	}
 }
+// export async function makeApiRequest(path) {
+// 	try {
+// 		const response = await fetch("https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1m&limit=1500")
+// 		return response.json();
+// 	} catch (error) {
+// 		throw new Error(`CryptoCompare request error: ${error.status}`);
+// 	}
+// }
 
 // Generate a symbol ID from a pair of the coins
 export function generateSymbol(exchange, fromSymbol, toSymbol) {

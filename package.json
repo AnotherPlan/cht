@@ -5,6 +5,7 @@
     "https": "^1.0.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
+    "react-router-dom": "^6.3.0",
     "react-scripts": "5.0.0",
     "request": "^2.88.2",
     "request-promise": "^4.2.6",

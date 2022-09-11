@@ -7,6 +7,7 @@ import {
     subscribeOnStream,
     unsubscribeFromStream,
 } from './streaming.js';
+
 const lastBarsCache = new Map();
 const configurationData = {
     supported_resolutions: ['1', '5', '15', '30', '60', '240', 'D', 'W', 'M'],
@@ -18,8 +19,6 @@ const configurationData = {
     ],
     symbols_types: [{
         name: 'crypto',
-
-        // `symbolType` argument for the `searchSymbols` method, if a user selects this symbol type
         value: 'crypto',
     },
         // ...
@@ -30,7 +29,6 @@ async function getAllSymbols() {
     const data = { "Response": "Success", "Message": "", "HasWarning": false, "Type": 100, "RateLimit": {}, "Data": { "LaBit": { "pairs": { "BTC": ["USDT"], "ETH": ["USDT"], "XRP": ["USDT"], "TRX": ["USDT"] }, "isActive": false, "isTopTier": false } } }
 
     let allSymbols = [];
-
     for (const exchange of configurationData.exchanges) {
         const pairs = data.Data[exchange.value].pairs;
         for (const leftPairPart of Object.keys(pairs)) {
@@ -51,6 +49,8 @@ async function getAllSymbols() {
 }
 
 export default {
+    history: history,
+   
     onReady: (callback) => {
         console.log('[onReady]: Method call');
         setTimeout(() => callback(configurationData));
@@ -98,16 +98,17 @@ export default {
             description: symbolItem.description,
             type: symbolItem.type,
             session: '24x7',
-            timezone: 'Asia/Seoul',
+            timezone: 'UTC',
             exchange: symbolItem.exchange,
             minmov: 1,
             pricescale: 100,
-            visible_plots_set: true,
+            has_no_volume: false,
             supported_resolutions: configurationData.supported_resolutions,
             has_intraday: true,
             has_daily: true,
             has_weekly_and_monthly: true,
-            has_empty_bars: false,
+            has_empty_bars: true,
+            volume_precision: 10,
             data_status: 'streaming'
         };
         
@@ -117,7 +118,6 @@ export default {
     getBars: async (symbolInfo, resolution, periodParams, onHistoryCallback, onErrorCallback) => {
         
         const { from, to, firstDataRequest } = periodParams;
-        
         console.log('[getBars]: Method call', symbolInfo, resolution, from, to);
         const parsedSymbol = parseFullSymbol(symbolInfo.full_name);
         console.log(symbolInfo)
@@ -133,7 +133,7 @@ export default {
        
 		try {
 			const data = await makeApiRequest(params);
-
+            console.log(data)
             
 			if (data.Response && data.Response === 'Error' || data.data.length === 0) {
 				// "noData" should be set if there is no data in the requested period.
@@ -157,11 +157,14 @@ export default {
 						high: bar[2],
 						open: bar[1],
 						close: bar[4],
-						volume: bar[5]
+						volume: parseFloat(bar[5])
 					}];
 				}
 			});
 			if (firstDataRequest) {
+                var lastBar = bars[bars.length - 1]
+                history[symbolInfo.full_name] = {lastBar: lastBar}
+                history['symbol'] = symbolInfo.symbol
 				lastBarsCache.set(symbolInfo.full_name, {
 					...bars[bars.length - 1],
 				});
@@ -175,7 +178,7 @@ export default {
 			onErrorCallback(error);
 		}
     },
-
+    
     subscribeBars: (
         symbolInfo,
         resolution,
@@ -193,9 +196,10 @@ export default {
             lastBarsCache.get(symbolInfo.full_name),
         );
     },
-
     unsubscribeBars: (subscriberUID) => {
         console.log('[unsubscribeBars]: Method call with subscriberUID:', subscriberUID);
         unsubscribeFromStream(subscriberUID);
     },
+    //getVolumeProfileResolutionForPeriod:(currentResolution, from, to, symbolInfo),
 };
+
